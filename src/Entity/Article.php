@@ -25,6 +25,13 @@ class Article
     #[ORM\Column(type: 'datetime')]
     private \DateTimeInterface $published;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $isPublished;
+
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'articles')]
+    #[ORM\JoinColumn(nullable: false)]
+    private User $user;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -35,9 +42,11 @@ class Article
         return $this->title;
     }
 
-    public function setTitle(?string $title): void
+    public function setTitle(?string $title): self
     {
         $this->title = $title;
+
+        return $this;
     }
 
     public function getSummary(): ?string
@@ -45,9 +54,11 @@ class Article
         return $this->summary;
     }
 
-    public function setSummary(?string $summary): void
+    public function setSummary(?string $summary): self
     {
         $this->summary = $summary;
+
+        return $this;
     }
 
     public function getContent(): ?string
@@ -55,9 +66,11 @@ class Article
         return $this->content;
     }
 
-    public function setContent(?string $content): void
+    public function setContent(?string $content): self
     {
         $this->content = $content;
+
+        return $this;
     }
 
     public function getPublished(): \DateTimeInterface
@@ -65,10 +78,35 @@ class Article
         return $this->published;
     }
 
-    public function setPublished(\DateTimeInterface $published): void
+    public function setPublished(\DateTimeInterface $published): self
     {
         $this->published = $published;
+
+        return $this;
     }
+
+    public function isPublished(): bool
+    {
+        return $this->isPublished;
+    }
+
+    public function setIsPublished(bool $isPublished): void
+    {
+        $this->isPublished = $isPublished;
+    }
+
+    public function getUser(): User
+    {
+        return $this->user;
+    }
+
+    public function setUser(User $user): self
+    {
+        $this->user = $user;
+
+        return $this;
+    }
+
 
 
 }
