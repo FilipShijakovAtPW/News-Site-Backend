@@ -3,7 +3,9 @@
 namespace App\Entity;
 
 use App\Repository\ArticleRepository;
+use App\Serialization\NormalizationGroups;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
 class Article
@@ -11,18 +13,23 @@ class Article
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups([NormalizationGroups::PUBLISHED_ARTICLES])]
     private ?int $id = null;
 
     #[ORM\Column(type: 'string')]
+    #[Groups([NormalizationGroups::PUBLISHED_ARTICLES])]
     private ?string $title;
 
     #[ORM\Column(type: 'string')]
+    #[Groups([NormalizationGroups::PUBLISHED_ARTICLES])]
     private ?string $summary;
 
     #[ORM\Column(type: 'text')]
+    #[Groups([NormalizationGroups::PUBLISHED_ARTICLES])]
     private ?string $content;
 
     #[ORM\Column(type: 'datetime')]
+    #[Groups([NormalizationGroups::PUBLISHED_ARTICLES])]
     private \DateTimeInterface $published;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
@@ -30,6 +37,7 @@ class Article
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'articles')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups([NormalizationGroups::PUBLISHED_ARTICLES])]
     private User $user;
 
     public function getId(): ?int
@@ -42,23 +50,9 @@ class Article
         return $this->title;
     }
 
-    public function setTitle(?string $title): self
-    {
-        $this->title = $title;
-
-        return $this;
-    }
-
     public function getSummary(): ?string
     {
         return $this->summary;
-    }
-
-    public function setSummary(?string $summary): self
-    {
-        $this->summary = $summary;
-
-        return $this;
     }
 
     public function getContent(): ?string
@@ -66,23 +60,9 @@ class Article
         return $this->content;
     }
 
-    public function setContent(?string $content): self
-    {
-        $this->content = $content;
-
-        return $this;
-    }
-
     public function getPublished(): \DateTimeInterface
     {
         return $this->published;
-    }
-
-    public function setPublished(\DateTimeInterface $published): self
-    {
-        $this->published = $published;
-
-        return $this;
     }
 
     public function isPublished(): bool
@@ -90,23 +70,9 @@ class Article
         return $this->isPublished;
     }
 
-    public function setIsPublished(bool $isPublished): void
-    {
-        $this->isPublished = $isPublished;
-    }
-
     public function getUser(): User
     {
         return $this->user;
     }
-
-    public function setUser(User $user): self
-    {
-        $this->user = $user;
-
-        return $this;
-    }
-
-
 
 }

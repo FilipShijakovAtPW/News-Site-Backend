@@ -21,6 +21,37 @@ class ArticleRepository extends ServiceEntityRepository
         parent::__construct($registry, Article::class);
     }
 
+    public function findAllThatMatch(array $parameters) {
+        $pageSize = $parameters['pageSize'];
+        $pageStart = ($parameters['pageNumber'] - 1) * $pageSize;
+
+        $qb = $this->createQueryBuilder('a');
+
+        if ($parameters['matches'])
+        {
+            $qb->andWhere("a.title = :title")
+            ->setParameter('title', "{$parameters['matches']}");
+
+        }
+        else if ($parameters['contains'])
+        {
+            $qb->andWhere("a.title LIKE :title")
+            ->setParameter('title', "%{$parameters['contains']}%");
+        }
+
+        if ($parameters['orderByAsc'])
+        {
+            $qb->orderBy("a.{$parameters['orderByAsc']}", 'ASC');
+        }
+        else if ($parameters['orderByDesc'])
+        {
+            $qb->orderBy("a.{$parameters['orderByDesc']}", 'DESC');
+        }
+
+        return $qb->setFirstResult($pageStart)
+            ->setMaxResults($pageSize);
+    }
+
 //    /**
 //     * @return Article[] Returns an array of Article objects
 //     */
