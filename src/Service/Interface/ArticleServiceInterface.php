@@ -12,4 +12,6 @@ interface ArticleServiceInterface
 
     public function getUserArticles(int $userId, array $parameters);
 
+    public function changePublishedStateForArticle(int $articleId);
+
 }

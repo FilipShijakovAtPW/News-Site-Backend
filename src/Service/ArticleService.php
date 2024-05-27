@@ -2,7 +2,6 @@
 
 namespace App\Service;
 
-use App\Entity\Article;
 use App\Repository\ArticleRepository;
 use App\Service\Interface\ArticleServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -10,7 +9,8 @@ use Doctrine\ORM\EntityManagerInterface;
 class ArticleService implements ArticleServiceInterface
 {
     public function __construct(
-        private ArticleRepository $articleRepository
+        private ArticleRepository $articleRepository,
+        private EntityManagerInterface $entityManager
     )
     {
     }
@@ -25,7 +25,9 @@ class ArticleService implements ArticleServiceInterface
 
     public function getAllArticles(array $parameters)
     {
-        // TODO: Implement getAllArticles() method.
+        return $this->articleRepository->findAllThatMatch($parameters)
+            ->getQuery()
+            ->getResult();
     }
 
     public function getUserPublishedArticles(int $userId, array $parameters)
@@ -36,5 +38,14 @@ class ArticleService implements ArticleServiceInterface
     public function getUserArticles(int $userId, array $parameters)
     {
         // TODO: Implement getUserArticles() method.
+    }
+
+    public function changePublishedStateForArticle(int $articleId): void
+    {
+       $article = $this->articleRepository->find($articleId);
+
+       $article->changeIsPublishedState();
+
+       $this->entityManager->flush();
     }
 }

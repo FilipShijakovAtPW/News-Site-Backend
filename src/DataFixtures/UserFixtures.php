@@ -14,24 +14,28 @@ class UserFixtures extends Fixture
             'username' => 'admin',
             'email' => 'admin@news.com',
             'password' => 'Pass123',
+            'isConfirmed' => true,
             'roles' => [User::ROLE_ADMIN],
         ],
         [
             'username' => 'editor',
             'email' => 'editor@news.com',
             'password' => 'Pass123',
+            'isConfirmed' => true,
             'roles' => [User::ROLE_EDITOR],
         ],
         [
             'username' => 'writer',
             'email' => 'writer@news.com',
             'password' => 'Pass123',
+            'isConfirmed' => true,
             'roles' => [User::ROLE_WRITER],
         ],
         [
             'username' => 'reader',
             'email' => 'reader@news.com',
             'password' => 'Pass123',
+            'isConfirmed' => true,
             'roles' => [],
         ],
     ];
@@ -48,6 +52,7 @@ class UserFixtures extends Fixture
             $user->setUsername($USER['username'])
                 ->setEmail($USER['email'])
                 ->setPassword($this->passwordHasher->hashPassword($user, $USER['password']))
+                ->setIsConfirmed($USER['isConfirmed'])
                 ->setRoles($USER['roles']);
 
             $this->addReference($USER['username'], $user);
