@@ -9,9 +9,7 @@ use App\Entity\Dto\UserAssignRole;
 use App\Entity\User;
 use App\Exception\UserNotFoundException;
 use App\Serialization\NormalizationGroups;
-use App\Service\Interface\ArticleServiceInterface;
 use App\Service\Interface\UserServiceInterface;
-use App\Service\QueryParameterExtractorService;
 use App\Service\SerializationAndValidationService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -21,13 +19,11 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-#[Route('/api/dashboard')]
-class DashboardController extends AbstractController
+#[Route('/api/dashboard/user')]
+class UserController extends AbstractController
 {
     public function __construct(
-        private ArticleServiceInterface $articleService,
         private UserServiceInterface $userService,
-        private QueryParameterExtractorService $parameterExtractorService,
         private SerializerInterface $serializer,
         private ValidatorInterface $validator,
         private SerializationAndValidationService $serializationAndValidationService
@@ -35,19 +31,7 @@ class DashboardController extends AbstractController
     {
     }
 
-    #[Route('/article', name: 'dashboard-get-all-articles', methods: ['GET'])]
-    public function getAllArticles(Request $request): Response
-    {
-        $this->denyAccessUnlessGranted(User::ROLE_EDITOR);
-
-        $parameters = $this->parameterExtractorService->extractQueryParameters($request);
-
-        $items = $this->articleService->getAllArticles($parameters);
-
-        return JsonResponse::fromJsonString($this->serializer->serialize($items, 'json', ['groups' => NormalizationGroups::ALL_ARTICLES]));
-    }
-
-    #[Route('/user', name: 'dashboard-get-all-users', methods: ['GET'])]
+    #[Route('/', name: 'dashboard-get-all-users', methods: ['GET'])]
     public function getAllUsers(): Response
     {
         $this->denyAccessUnlessGranted(User::ROLE_ADMIN);
@@ -57,17 +41,7 @@ class DashboardController extends AbstractController
         return JsonResponse::fromJsonString($this->serializer->serialize($items, 'json', ['groups' => NormalizationGroups::ALL_USERS]));
     }
 
-    #[Route('/article/{id}/change-published-state', name: 'dashboard-change-published-state-article', requirements: ['id' => '\d+'], methods: ['GET'])]
-    public function changePublishedStateForArticle(int $id): Response
-    {
-        $this->denyAccessUnlessGranted(User::ROLE_EDITOR);
-
-        $this->articleService->changePublishedStateForArticle($id);
-
-        return new Response();
-    }
-
-    #[Route('/user', name: 'dashboard-create-user', methods: ['POST'])]
+    #[Route('/', name: 'dashboard-create-user', methods: ['POST'])]
     public function createUser(Request $request): Response
     {
         $this->denyAccessUnlessGranted(User::ROLE_ADMIN);
@@ -85,7 +59,7 @@ class DashboardController extends AbstractController
         ], Response::HTTP_CREATED);
     }
 
-    #[Route('/user/assign-role', name: 'dashboard-assign-role', methods: ['POST'])]
+    #[Route('/assign-role', name: 'dashboard-assign-role', methods: ['POST'])]
     public function assignRoleToUser(Request $request): Response
     {
         $this->denyAccessUnlessGranted(User::ROLE_ADMIN);
@@ -112,7 +86,7 @@ class DashboardController extends AbstractController
         return new Response();
     }
 
-    #[Route('/user/remove-role', name: 'dashboard-remove-role', methods: ['POST'])]
+    #[Route('/remove-role', name: 'dashboard-remove-role', methods: ['POST'])]
     public function removeRoleFromUser(Request $request): Response
     {
         $this->denyAccessUnlessGranted(User::ROLE_ADMIN);
@@ -138,4 +112,5 @@ class DashboardController extends AbstractController
 
         return new Response();
     }
+
 }

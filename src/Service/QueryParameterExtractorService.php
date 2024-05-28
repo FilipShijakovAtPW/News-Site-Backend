@@ -6,6 +6,7 @@ use Symfony\Component\HttpFoundation\Request;
 
 class QueryParameterExtractorService
 {
+    const ARTICLE_PROPERTIES = ['title', 'summary', 'content'];
 
     public function extractQueryParameters(Request $request): array
     {
@@ -15,6 +16,13 @@ class QueryParameterExtractorService
         $orderByDesc = $request->query->get('orderByDesc');
         $matches = $request->query->get('matches');
         $contains = $request->query->get('contains');
+
+        if (!in_array($orderByAsc, self::ARTICLE_PROPERTIES)) {
+            $orderByAsc = null;
+        }
+        if (!in_array($orderByDesc, self::ARTICLE_PROPERTIES)) {
+            $orderByDesc = null;
+        }
 
         return [
             'pageNumber' => $pageNumber,

@@ -2,14 +2,11 @@
 
 namespace App\Controller;
 
-use App\Deserialization\DenormalizationGroups;
 use App\Entity\Dto\UserConfirm;
-use App\Entity\User;
 use App\Exception\InvalidConfirmationTokenException;
 use App\Service\Interface\UserServiceInterface;
 use App\Service\SerializationAndValidationService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -31,7 +28,9 @@ class UserConfirmationController extends AbstractController
     #[Route('/confirm/{token}', name: 'confirm-user', methods: ['POST'])]
     public function confirmUser(string $token, Request $request): Response
     {
-        $result = $this->serializationAndValidationService->serializeAndValidate($request, $this->serializer, $this->validator, UserConfirm::class, null);
+        $result = $this->serializationAndValidationService->serializeAndValidate(
+            $request, $this->serializer, $this->validator, UserConfirm::class, null
+        );
 
         if ($result instanceof Response) {
             return $result;

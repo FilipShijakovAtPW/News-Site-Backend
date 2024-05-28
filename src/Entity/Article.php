@@ -2,10 +2,12 @@
 
 namespace App\Entity;
 
+use App\Deserialization\DenormalizationGroups;
 use App\Repository\ArticleRepository;
 use App\Serialization\NormalizationGroups;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
 class Article implements Entity
@@ -18,28 +20,31 @@ class Article implements Entity
 
     #[ORM\Column(type: 'string')]
     #[Groups([NormalizationGroups::PUBLISHED_ARTICLES, NormalizationGroups::ALL_ARTICLES])]
-    private ?string $title;
+    #[Assert\NotBlank(groups: [DenormalizationGroups::CREATE_ARTICLE])]
+    private ?string $title = null;
 
     #[ORM\Column(type: 'string')]
     #[Groups([NormalizationGroups::PUBLISHED_ARTICLES, NormalizationGroups::ALL_ARTICLES])]
-    private ?string $summary;
+    #[Assert\NotBlank(groups: [DenormalizationGroups::CREATE_ARTICLE])]
+    private ?string $summary = null;
 
     #[ORM\Column(type: 'text')]
     #[Groups([NormalizationGroups::PUBLISHED_ARTICLES, NormalizationGroups::ALL_ARTICLES])]
-    private ?string $content;
+    #[Assert\NotBlank(groups: [DenormalizationGroups::CREATE_ARTICLE])]
+    private ?string $content = null;
 
     #[ORM\Column(type: 'datetime')]
     #[Groups([NormalizationGroups::PUBLISHED_ARTICLES, NormalizationGroups::ALL_ARTICLES])]
-    private \DateTimeInterface $published;
+    private ?\DateTimeInterface $published = null;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     #[Groups([NormalizationGroups::ALL_ARTICLES])]
-    private bool $isPublished;
+    private ?bool $isPublished = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'articles')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups([NormalizationGroups::PUBLISHED_ARTICLES, NormalizationGroups::ALL_ARTICLES])]
-    private User $user;
+    private ?User $user = null;
 
     public function getId(): ?int
     {
@@ -82,7 +87,7 @@ class Article implements Entity
         return $this;
     }
 
-    public function getPublished(): \DateTimeInterface
+    public function getPublished(): ?\DateTimeInterface
     {
         return $this->published;
     }
@@ -94,7 +99,7 @@ class Article implements Entity
         return $this;
     }
 
-    public function isPublished(): bool
+    public function isPublished(): ?bool
     {
         return $this->isPublished;
     }
@@ -106,7 +111,7 @@ class Article implements Entity
         return $this;
     }
 
-    public function getUser(): User
+    public function getUser(): ?User
     {
         return $this->user;
     }

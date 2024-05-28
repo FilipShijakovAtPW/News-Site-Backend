@@ -2,7 +2,6 @@
 
 namespace App\Service;
 
-use App\Entity\Entity;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\SerializerInterface;
