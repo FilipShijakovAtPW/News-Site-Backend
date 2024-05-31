@@ -34,16 +34,21 @@ class ArticleController extends AbstractController
     {
     }
 
-    #[Route("/article", name: "published-articles", methods: ["GET"])]
-    public function publishedArticles(Request $request): Response
+    #[Route('/dashboard/article', name: 'dashboard-get-articles', methods: ['GET'])]
+    public function getArticles(Request $request): Response
     {
+        $isEditor = $this->isGranted(User::ROLE_EDITOR);
+
         $parameters = $this->parameterExtractorService->extractQueryParameters($request);
 
-        $items = $this->articleService->getPublishedArticles($parameters);
+        if ($isEditor) {
+            $items = $this->articleService->getAllArticles($parameters);
+        } else {
+            $items = $this->articleService->getPublishedArticles($parameters);
+        }
 
         return JsonResponse::fromJsonString(
-            $this->serializer->serialize($items, 'json', ['groups' => [NormalizationGroups::PUBLISHED_ARTICLES]])
-        );
+            $this->serializer->serialize($items, 'json', ['groups' => [NormalizationGroups::ALL_ARTICLES]]));
     }
 
     #[Route("/dashboard/user-article", name: "dashboard-user-articles", methods: ["GET"])]
@@ -58,18 +63,6 @@ class ArticleController extends AbstractController
         return JsonResponse::fromJsonString(
             $this->serializer->serialize($items, 'json', ['groups' => [NormalizationGroups::ALL_ARTICLES]])
         );
-    }
-
-    #[Route('/dashboard/article', name: 'dashboard-get-all-articles', methods: ['GET'])]
-    public function getAllArticles(Request $request): Response
-    {
-        $this->denyAccessUnlessGranted(User::ROLE_EDITOR);
-
-        $parameters = $this->parameterExtractorService->extractQueryParameters($request);
-
-        $items = $this->articleService->getAllArticles($parameters);
-
-        return JsonResponse::fromJsonString($this->serializer->serialize($items, 'json', ['groups' => NormalizationGroups::ALL_ARTICLES]));
     }
 
     #[Route('/dashboard/article/{id}/change-published-state', name: 'dashboard-change-published-state-article', requirements: ['id' => '\d+'], methods: ['GET'])]

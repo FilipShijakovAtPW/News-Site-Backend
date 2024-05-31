@@ -19,22 +19,22 @@ class Article implements Entity
     private ?int $id = null;
 
     #[ORM\Column(type: 'string')]
-    #[Groups([NormalizationGroups::PUBLISHED_ARTICLES, NormalizationGroups::ALL_ARTICLES])]
+    #[Groups([NormalizationGroups::ALL_ARTICLES])]
     #[Assert\NotBlank(groups: [DenormalizationGroups::CREATE_ARTICLE])]
     private ?string $title = null;
 
     #[ORM\Column(type: 'string')]
-    #[Groups([NormalizationGroups::PUBLISHED_ARTICLES, NormalizationGroups::ALL_ARTICLES])]
+    #[Groups([NormalizationGroups::ALL_ARTICLES])]
     #[Assert\NotBlank(groups: [DenormalizationGroups::CREATE_ARTICLE])]
     private ?string $summary = null;
 
     #[ORM\Column(type: 'text')]
-    #[Groups([NormalizationGroups::PUBLISHED_ARTICLES, NormalizationGroups::ALL_ARTICLES])]
+    #[Groups([NormalizationGroups::ALL_ARTICLES])]
     #[Assert\NotBlank(groups: [DenormalizationGroups::CREATE_ARTICLE])]
     private ?string $content = null;
 
     #[ORM\Column(type: 'datetime')]
-    #[Groups([NormalizationGroups::PUBLISHED_ARTICLES, NormalizationGroups::ALL_ARTICLES])]
+    #[Groups([NormalizationGroups::ALL_ARTICLES])]
     private ?\DateTimeInterface $published = null;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
@@ -43,7 +43,7 @@ class Article implements Entity
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'articles')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups([NormalizationGroups::PUBLISHED_ARTICLES, NormalizationGroups::ALL_ARTICLES])]
+    #[Groups([NormalizationGroups::ALL_ARTICLES])]
     private ?User $user = null;
 
     public function getId(): ?int
