@@ -6,7 +6,7 @@ use Symfony\Component\HttpFoundation\Request;
 
 class QueryParameterExtractorService
 {
-    const ARTICLE_PROPERTIES = ['title', 'summary', 'content'];
+    const ARTICLE_PROPERTIES = ['title', 'summary', 'content', 'published'];
 
     public function extractQueryParameters(Request $request): array
     {
