@@ -7,6 +7,7 @@ use App\Entity\Dto\UserConfirm;
 use App\Entity\User;
 use App\Exception\InvalidConfirmationTokenException;
 use App\Exception\UserNotFoundException;
+use App\Model\UsersRepositoryInterface;
 use App\Repository\UserRepository;
 use App\Service\Interface\UserServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -16,8 +17,7 @@ use Symfony\Component\Uid\Uuid;
 class UserService implements UserServiceInterface
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
-        private UserRepository $userRepository,
+        private UsersRepositoryInterface    $usersRepository,
         private UserPasswordHasherInterface $passwordHasher
     )
     {
@@ -25,7 +25,7 @@ class UserService implements UserServiceInterface
 
     public function getAllUsers(): array
     {
-        return $this->userRepository->findAll();
+        return $this->usersRepository->getAllUsers();
     }
 
     public function createUser(User $user): string
@@ -35,9 +35,7 @@ class UserService implements UserServiceInterface
             ->setConfirmationToken($confirmationToken)
             ->setIsConfirmed(false);
 
-        $this->entityManager->persist($user);
-
-        $this->entityManager->flush();
+        $this->usersRepository->saveUser($user);
 
         return $confirmationToken;
     }
@@ -47,20 +45,15 @@ class UserService implements UserServiceInterface
      */
     public function confirmUser(string $token, UserConfirm $userConfirm): void
     {
-        $user =$this->userRepository->findOneBy(['confirmationToken' => $token]);
-
-        if (!$user) {
+        try {
+            $user = $this->usersRepository->getUserByConfirmationToken($token);
+        } catch (UserNotFoundException) {
             throw new InvalidConfirmationTokenException();
         }
 
-        $user->setConfirmationToken(null)
-            ->setIsConfirmed(true)
-            ->setPassword(
-                $this->passwordHasher->hashPassword($user, $userConfirm->getPassword())
-            );
+        $user->confirmUser($this->passwordHasher->hashPassword($user, $userConfirm->getPassword()));
 
-        $this->entityManager->persist($user);
-        $this->entityManager->flush();
+        $this->usersRepository->saveUser($user);
     }
 
     /**
@@ -68,21 +61,14 @@ class UserService implements UserServiceInterface
      */
     public function assignRole(UserAssignRole $assignRole): void
     {
-        $user = $this->userRepository->find($assignRole->getUserId());
+        $userId = $assignRole->getUserId();
+        $newRole = $assignRole->getRole();
 
-        if (!$user) {
-            throw new UserNotFoundException($assignRole->getUserId());
-        }
+        $user = $this->usersRepository->getUserById($userId);
 
-        if (in_array($assignRole->getRole(), $user->getRoles())) {
-            return;
-        }
+        $user->assignRole($newRole);
 
-        $newRoles = $user->getRoles();
-        $newRoles[] = $assignRole->getRole();
-        $user->setRoles($newRoles);
-
-        $this->entityManager->flush();
+        $this->usersRepository->flush();
     }
 
     /**
@@ -90,22 +76,13 @@ class UserService implements UserServiceInterface
      */
     public function removeRole(UserAssignRole $assignRole): void
     {
-        $user = $this->userRepository->find($assignRole->getUserId());
+        $userId = $assignRole->getUserId();
+        $newRole = $assignRole->getRole();
 
-        if (!$user) {
-            throw new UserNotFoundException($assignRole->getUserId());
-        }
+        $user = $this->usersRepository->getUserById($userId);
 
-        if (!in_array($assignRole->getRole(), $user->getRoles())) {
-            return;
-        }
+        $user->removeRole($newRole);
 
-        $newRoles = $user->getRoles();
-        $key = array_search($assignRole->getRole(), $newRoles);
-        unset($newRoles[$key]);
-
-        $user->setRoles($newRoles);
-
-        $this->entityManager->flush();
+        $this->usersRepository->flush();
     }
 }

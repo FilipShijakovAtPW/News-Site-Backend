@@ -158,4 +158,33 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Entity
         return $this->username;
     }
 
+    public function assignRole(string $role): void
+    {
+        if (in_array($role, $this->getRoles())) {
+            return;
+        }
+
+        $newRoles = $this->getRoles();
+        $newRoles[] = $role;
+        $this->setRoles($newRoles);
+    }
+
+    public function removeRole(string $role): void
+    {
+        if (!in_array($role, $this->getRoles())) {
+            return;
+        }
+
+        $newRoles = $this->getRoles();
+        $key = array_search($role, $newRoles);
+        unset($newRoles[$key]);
+    }
+
+    public function confirmUser(string $password): void
+    {
+        $this->setConfirmationToken(null)
+            ->setIsConfirmed(true)
+            ->setPassword($password);
+    }
+
 }

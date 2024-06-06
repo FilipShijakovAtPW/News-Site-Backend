@@ -6,6 +6,7 @@ use App\Entity\Article;
 use App\Entity\User;
 use App\Exception\ArticleNotFoundException;
 use App\Exception\UserCantEditOthersArticleException;
+use App\Model\ArticlesRepositoryInterface;
 use App\Repository\ArticleRepository;
 use App\Service\Interface\ArticleServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -13,43 +14,33 @@ use Doctrine\ORM\EntityManagerInterface;
 class ArticleService implements ArticleServiceInterface
 {
     public function __construct(
-        private ArticleRepository $articleRepository,
-        private EntityManagerInterface $entityManager
+        private ArticlesRepositoryInterface $articlesRepository
     )
     {
     }
 
     public function getPublishedArticles(array $parameters): array
     {
-        return $this->articleRepository->findAllThatMatch($parameters)
-            ->andWhere('a.isPublished = 1')
-            ->getQuery()
-            ->getResult();
+        return $this->articlesRepository->getPublishedArticlesWithFilters($parameters);
     }
 
     public function getAllArticles(array $parameters)
     {
-        return $this->articleRepository->findAllThatMatch($parameters)
-            ->getQuery()
-            ->getResult();
+        return $this->articlesRepository->getAllArticlesWithFilters($parameters);
     }
 
     public function getUserArticles(User $user, array $parameters)
     {
-        return $this->articleRepository->findAllThatMatch($parameters)
-            ->andWhere('a.user = :userId')
-            ->setParameter('userId', $user->getId())
-            ->getQuery()
-            ->getResult();
+        return $this->articlesRepository->getAllArticlesWithFilters($parameters);
     }
 
     public function changePublishedStateForArticle(int $articleId): void
     {
-       $article = $this->articleRepository->find($articleId);
+       $article = $this->articlesRepository->getArticleById($articleId);
 
        $article->changeIsPublishedState();
 
-       $this->entityManager->flush();
+       $this->articlesRepository->flush();
     }
 
     public function createArticle(Article $article): Article
@@ -58,8 +49,7 @@ class ArticleService implements ArticleServiceInterface
             ->setPublished(new \DateTime())
             ->setIsPublished(false);
 
-        $this->entityManager->persist($article);
-        $this->entityManager->flush();
+        $this->articlesRepository->saveArticle($article);
 
         return $article;
     }
@@ -70,11 +60,7 @@ class ArticleService implements ArticleServiceInterface
      */
     public function editArticle(int $articleId, User $user, Article $article): Article
     {
-        $articleFromDb = $this->articleRepository->find($articleId);
-
-        if (!$articleFromDb) {
-            throw new ArticleNotFoundException($articleId);
-        }
+        $articleFromDb = $this->articlesRepository->getArticleById($articleId);
 
         if ($articleFromDb->getUser()->getId() !== $user->getId()) {
             throw new UserCantEditOthersArticleException();
@@ -92,7 +78,7 @@ class ArticleService implements ArticleServiceInterface
             $articleFromDb->setSummary($article->getSummary());
         }
 
-        $this->entityManager->flush();
+        $this->articlesRepository->flush();
 
         return $articleFromDb;
     }
