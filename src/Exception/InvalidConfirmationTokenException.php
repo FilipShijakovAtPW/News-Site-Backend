@@ -2,7 +2,9 @@
 
 namespace App\Exception;
 
-class InvalidConfirmationTokenException extends \Exception
+use App\Exception\ExceptionTypes\NotFoundExceptionInterface;
+
+class InvalidConfirmationTokenException extends BaseException implements NotFoundExceptionInterface
 {
 
     public function __construct()
@@ -10,5 +12,10 @@ class InvalidConfirmationTokenException extends \Exception
         parent::__construct(
             'Invalid confirmation token'
         );
+    }
+
+    public function getErrors()
+    {
+        return $this->getMessage();
     }
 }

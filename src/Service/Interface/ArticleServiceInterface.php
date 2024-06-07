@@ -5,7 +5,6 @@ namespace App\Service\Interface;
 use App\Entity\Article;
 use App\Entity\User;
 use App\Exception\ArticleNotFoundException;
-use App\Exception\UserCantEditOthersArticleException;
 
 interface ArticleServiceInterface
 {

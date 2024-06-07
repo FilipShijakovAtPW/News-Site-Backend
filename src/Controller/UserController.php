@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Deserialization\DenormalizationGroups;
+use App\Deserialization\ControllerTraits\WorksWithJsonDecoderTrait;
 use App\Entity\Dto\UserAssignRole;
 use App\Entity\User;
 use App\Exception\UserNotFoundException;
 use App\Serialization\NormalizationGroups;
 use App\Service\Interface\UserServiceInterface;
 use App\Service\SerializationAndValidationService;
+use App\Validation\ControllerTraits\WorksWithValidationTrait;
+use App\Validation\JsonValidators\CreateUserJsonValidator;
+use App\Validation\JsonValidators\UserAssignRoleJsonValidator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,6 +25,9 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 #[Route('/api/dashboard/user')]
 class UserController extends AbstractController
 {
+    use WorksWithValidationTrait;
+    use WorksWithJsonDecoderTrait;
+
     public function __construct(
         private UserServiceInterface $userService,
         private SerializerInterface $serializer,
@@ -42,15 +48,15 @@ class UserController extends AbstractController
     }
 
     #[Route('/', name: 'dashboard-create-user', methods: ['POST'])]
-    public function createUser(Request $request): Response
+    public function createUser(Request $request, CreateUserJsonValidator $validator): Response
     {
         $this->denyAccessUnlessGranted(User::ROLE_ADMIN);
 
-        $result = $this->serializationAndValidationService->serializeAndValidate($request, $this->serializer, $this->validator, User::class, [DenormalizationGroups::CREATE_USER]);
+        $data = $this->getJsonDataFromRequest($request);
 
-        if ($result instanceof Response) {
-            return $result;
-        }
+        $this->validate($data, $validator);
+
+        $result = $this->serializer->deserialize(json_encode($data), User::class, 'json');
 
         $confirmationToken = $this->userService->createUser($result);
 
@@ -60,55 +66,33 @@ class UserController extends AbstractController
     }
 
     #[Route('/assign-role', name: 'dashboard-assign-role', methods: ['POST'])]
-    public function assignRoleToUser(Request $request): Response
+    public function assignRoleToUser(Request $request, UserAssignRoleJsonValidator $validator): Response
     {
         $this->denyAccessUnlessGranted(User::ROLE_ADMIN);
 
-        $result = $this->serializationAndValidationService->serializeAndValidate($request, $this->serializer, $this->validator, UserAssignRole::class, null);
+        $data = $this->getJsonDataFromRequest($request);
 
-        if ($result instanceof Response) {
-            return $result;
-        }
+        $this->validate($data, $validator);
 
-        if (!in_array($result->getRole(), [User::ROLE_ADMIN, User::ROLE_EDITOR, User::ROLE_WRITER])) {
-            return new Response(
-                "Role should be one of the following [ROLE_ADMIN, ROLE_EDITOR, ROLE_WRITER]",
-                Response::HTTP_BAD_REQUEST
-            );
-        }
+        $result = $this->serializer->deserialize(json_encode($data), UserAssignRole::class, 'json');
 
-        try {
-            $this->userService->assignRole($result);
-        } catch (UserNotFoundException $exception) {
-            return new Response($exception->getMessage(), Response::HTTP_BAD_REQUEST);
-        }
+        $this->userService->assignRole($result);
 
         return new Response();
     }
 
     #[Route('/remove-role', name: 'dashboard-remove-role', methods: ['POST'])]
-    public function removeRoleFromUser(Request $request): Response
+    public function removeRoleFromUser(Request $request, UserAssignRoleJsonValidator $validator): Response
     {
         $this->denyAccessUnlessGranted(User::ROLE_ADMIN);
 
-        $result = $this->serializationAndValidationService->serializeAndValidate($request, $this->serializer, $this->validator, UserAssignRole::class, null);
+        $data = $this->getJsonDataFromRequest($request);
 
-        if ($result instanceof Response) {
-            return $result;
-        }
+        $this->validate($data, $validator);
 
-        if (!in_array($result->getRole(), [User::ROLE_ADMIN, User::ROLE_EDITOR, User::ROLE_WRITER])) {
-            return new Response(
-                "Role should be one of the following [ROLE_ADMIN, ROLE_EDITOR, ROLE_WRITER]",
-                Response::HTTP_BAD_REQUEST
-            );
-        }
+        $result = $this->serializer->deserialize(json_encode($data), UserAssignRole::class, 'json');
 
-        try {
-            $this->userService->removeRole($result);
-        } catch (UserNotFoundException $exception) {
-            return new Response($exception->getMessage(), Response::HTTP_BAD_REQUEST);
-        }
+        $this->userService->removeRole($result);
 
         return new Response();
     }

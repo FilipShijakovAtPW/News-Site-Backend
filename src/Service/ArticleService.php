@@ -5,11 +5,8 @@ namespace App\Service;
 use App\Entity\Article;
 use App\Entity\User;
 use App\Exception\ArticleNotFoundException;
-use App\Exception\UserCantEditOthersArticleException;
 use App\Model\ArticlesRepositoryInterface;
-use App\Repository\ArticleRepository;
 use App\Service\Interface\ArticleServiceInterface;
-use Doctrine\ORM\EntityManagerInterface;
 
 class ArticleService implements ArticleServiceInterface
 {
