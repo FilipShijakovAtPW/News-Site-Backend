@@ -31,7 +31,7 @@ class ArticleService implements ArticleServiceInterface
 
     public function getUserArticles(User $user, array $parameters)
     {
-        return $this->articlesRepository->getAllArticlesWithFilters($parameters);
+        return $this->articlesRepository->getUserArticlesWithFilters($user->getId(), $parameters);
     }
 
     public function changePublishedStateForArticle(int $articleId): void
@@ -56,15 +56,10 @@ class ArticleService implements ArticleServiceInterface
 
     /**
      * @throws ArticleNotFoundException
-     * @throws UserCantEditOthersArticleException
      */
-    public function editArticle(int $articleId, User $user, Article $article): Article
+    public function editArticle(int $articleId, Article $article): Article
     {
         $articleFromDb = $this->articlesRepository->getArticleById($articleId);
-
-        if ($articleFromDb->getUser()->getId() !== $user->getId()) {
-            throw new UserCantEditOthersArticleException();
-        }
 
         if ($article->getTitle() && strlen($article->getTitle()) !== 0) {
             $articleFromDb->setTitle($article->getTitle());

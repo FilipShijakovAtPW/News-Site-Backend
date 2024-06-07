@@ -13,7 +13,7 @@ interface ArticlesRepositoryInterface
 
     public function getAllArticlesWithFilters(array $filters);
 
-    public function getUserArticlesThatMatch(int $userId, array $filters);
+    public function getUserArticlesWithFilters(int $userId, array $filters);
 
     public function saveArticle(Article $article);
 

@@ -21,8 +21,7 @@ interface ArticleServiceInterface
 
     /**
      * @throws ArticleNotFoundException
-     * @throws UserCantEditOthersArticleException
      */
-    public function editArticle(int $articleId, User $user, Article $article): Article;
+    public function editArticle(int $articleId, Article $article): Article;
 
 }

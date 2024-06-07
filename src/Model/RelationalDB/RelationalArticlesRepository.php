@@ -5,7 +5,6 @@ namespace App\Model\RelationalDB;
 use App\Entity\Article;
 use App\Exception\ArticleNotFoundException;
 use App\Model\ArticlesRepositoryInterface;
-use App\Model\GeneralRepositoryTrait;
 use App\Repository\ArticleRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
@@ -79,7 +78,7 @@ class RelationalArticlesRepository implements ArticlesRepositoryInterface
             ->getResult();
     }
 
-    public function getUserArticlesThatMatch(int $userId, array $filters)
+    public function getUserArticlesWithFilters(int $userId, array $filters)
     {
         return $this->getQueryBuilderWithFilters($filters)
             ->andWhere('a.user = :userId')

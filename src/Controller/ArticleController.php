@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Authorization\ArticleVoter;
 use App\Deserialization\DenormalizationGroups;
 use App\Entity\Article;
 use App\Entity\User;
@@ -104,7 +105,7 @@ class ArticleController extends AbstractController
     #[Route('/dashboard/article/{id}', name: 'dashboard-edit-article', methods: ['PUT'])]
     public function editArticle(int $id, Request $request): Response
     {
-        $this->denyAccessUnlessGranted(User::ROLE_WRITER);
+        $this->denyAccessUnlessGranted(ArticleVoter::EDIT, $id);
 
         $result = $this->serializationAndValidationService->serializeAndValidate(
             $request, $this->serializer, $this->validator, Article::class, null
@@ -116,13 +117,7 @@ class ArticleController extends AbstractController
 
         try
         {
-            $editedArticle = $this->articleService->editArticle($id, $this->getUser(), $result);
-        }
-        catch (UserCantEditOthersArticleException $exception)
-        {
-            return new JsonResponse([
-                'error' => $exception->getMessage()
-            ], Response::HTTP_UNAUTHORIZED);
+            $editedArticle = $this->articleService->editArticle($id, $result);
         }
         catch (ArticleNotFoundException $exception)
         {
