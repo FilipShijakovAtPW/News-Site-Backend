@@ -46,6 +46,27 @@ class Article implements Entity
     #[Groups([NormalizationGroups::ALL_ARTICLES])]
     private ?User $user = null;
 
+    public static function create(User $user, string $title, string $summary, string $content): self
+    {
+        $article = new Article();
+
+        $article->user = $user;
+        $article->title = $title;
+        $article->summary = $summary;
+        $article->content = $content;
+        $article->published = new \DateTime();
+        $article->isPublished = false;
+
+        return $article;
+    }
+
+    public function edit(?string $title, ?string $summary, ?string $content): void
+    {
+        $this->title = $title ?? $this->title;
+        $this->summary = $summary ?? $this->summary;
+        $this->content = $content ?? $this->content;
+    }
+
     public function getId(): ?int
     {
         return $this->id;

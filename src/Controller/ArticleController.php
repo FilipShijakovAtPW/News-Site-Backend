@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Authorization\ArticleVoter;
+use App\Commanding\Commands\ChangePublishedStateForArticleCommand;
+use App\Commanding\Commands\CreateArticleCommand;
+use App\Commanding\Commands\EditArticleCommand;
 use App\Deserialization\ControllerTraits\WorksWithJsonDecoderTrait;
 use App\Entity\Article;
 use App\Entity\User;
+use App\Model\ArticlesRepositoryInterface;
 use App\Serialization\NormalizationGroups;
 use App\Service\Interface\ArticleServiceInterface;
 use App\Service\QueryParameterExtractorService;
@@ -15,6 +19,7 @@ use App\Service\SerializationAndValidationService;
 use App\Validation\ControllerTraits\WorksWithValidationTrait;
 use App\Validation\JsonValidators\CreateArticleJsonValidator;
 use App\Validation\JsonValidators\EditArticleJsonValidator;
+use League\Tactician\CommandBus;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -34,7 +39,8 @@ class ArticleController extends AbstractController
         private ArticleServiceInterface           $articleService,
         private SerializerInterface               $serializer,
         private SerializationAndValidationService $serializationAndValidationService,
-        private ValidatorInterface                $validator
+        private ValidatorInterface                $validator,
+        private ArticlesRepositoryInterface $articlesRepository,
     )
     {
     }
@@ -71,17 +77,17 @@ class ArticleController extends AbstractController
     }
 
     #[Route('/dashboard/article/{id}/change-published-state', name: 'dashboard-change-published-state-article', requirements: ['id' => '\d+'], methods: ['GET'])]
-    public function changePublishedStateForArticle(int $id): Response
+    public function changePublishedStateForArticle(int $id, CommandBus $bus): Response
     {
         $this->denyAccessUnlessGranted(User::ROLE_EDITOR);
 
-        $this->articleService->changePublishedStateForArticle($id);
+        $bus->handle(new ChangePublishedStateForArticleCommand($id));
 
         return new Response();
     }
 
     #[Route('/dashboard/article', name: 'dashboard-create-article', methods: ['POST'])]
-    public function createArticle(Request $request, CreateArticleJsonValidator $validator): Response
+    public function createArticle(Request $request, CreateArticleJsonValidator $validator, CommandBus $bus): Response
     {
         $this->denyAccessUnlessGranted(User::ROLE_WRITER);
 
@@ -89,19 +95,18 @@ class ArticleController extends AbstractController
 
         $this->validate($data, $validator);
 
-        $result = $this->serializer->deserialize(json_encode($data), Article::class, 'json');
+        $bus->handle(new CreateArticleCommand(
+            $this->getUser(),
+            $data['title'],
+            $data['summary'],
+            $data['content']
+        ));
 
-        $user = $this->getUser();
-
-        $result->setUser($user);
-
-        $article = $this->articleService->createArticle($result);
-        $returnVal = $this->serializer->serialize($article, 'json', ['groups' => [NormalizationGroups::ALL_ARTICLES]]);
-        return JsonResponse::fromJsonString($returnVal, Response::HTTP_CREATED);
+        return JsonResponse::fromJsonString("", Response::HTTP_CREATED);
     }
 
     #[Route('/dashboard/article/{id}', name: 'dashboard-edit-article', methods: ['PUT'])]
-    public function editArticle(int $id, Request $request, EditArticleJsonValidator $validator): Response
+    public function editArticle(int $id, Request $request, EditArticleJsonValidator $validator, CommandBus $bus): Response
     {
         $this->denyAccessUnlessGranted(ArticleVoter::EDIT, $id);
 
@@ -109,12 +114,15 @@ class ArticleController extends AbstractController
 
         $this->validate($data, $validator);
 
-        $result = $this->serializer->deserialize(json_encode($data), Article::class, 'json');
-
-        $editedArticle = $this->articleService->editArticle($id, $result);
+        $bus->handle(new EditArticleCommand(
+            $id,
+            $data['title'] ?? null,
+            $data['summary'] ?? null,
+            $data['content'] ?? null
+        ));
 
         return JsonResponse::fromJsonString(
-            $this->serializer->serialize($editedArticle, 'json', ['groups' => [NormalizationGroups::ALL_ARTICLES]]),
+            "",
             Response::HTTP_CREATED
         );
     }

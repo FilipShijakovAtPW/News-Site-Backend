@@ -3,6 +3,7 @@
 namespace App\Model\RelationalDB;
 
 use App\Entity\User;
+use App\Exception\InvalidConfirmationTokenException;
 use App\Exception\UserNotFoundException;
 use App\Model\UsersRepositoryInterface;
 use App\Repository\UserRepository;
@@ -41,14 +42,14 @@ class RelationalUsersRepository implements UsersRepositoryInterface
     }
 
     /**
-     * @throws UserNotFoundException
+     * @throws InvalidConfirmationTokenException
      */
     public function getUserByConfirmationToken(string $confirmationToken): User
     {
         $user = $this->getRepository()->findOneBy(['confirmationToken' => $confirmationToken]);
 
         if (!$user) {
-            throw new UserNotFoundException(0);
+            throw new InvalidConfirmationTokenException();
         }
 
         return $user;

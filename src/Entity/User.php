@@ -11,6 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
@@ -59,6 +60,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Entity
     {
         $this->roles = [];
         $this->articles = new ArrayCollection();
+    }
+
+    public static function create(string $username, string $email): self
+    {
+        $user = new User();
+        $user->username = $username;
+        $user->email = $email;
+
+        $confirmationToken = Uuid::v4()->toBase58();
+        $user->confirmationToken = $confirmationToken;
+        $user->isConfirmed = false;
+
+        return $user;
     }
 
     public function getId(): ?int
@@ -171,13 +185,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Entity
 
     public function removeRole(string $role): void
     {
-        if (!in_array($role, $this->getRoles())) {
+        $userRoles = $this->getRoles();
+        if (!in_array($role, $userRoles)) {
             return;
         }
 
-        $newRoles = $this->getRoles();
-        $key = array_search($role, $newRoles);
-        unset($newRoles[$key]);
+        $this->roles = array_filter($userRoles, function ($userRole) use ($role) {
+            return $userRole !== $role;
+        });
     }
 
     public function confirmUser(string $password): void

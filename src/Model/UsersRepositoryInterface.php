@@ -3,6 +3,7 @@
 namespace App\Model;
 
 use App\Entity\User;
+use App\Exception\InvalidConfirmationTokenException;
 use App\Exception\UserNotFoundException;
 
 interface UsersRepositoryInterface
@@ -15,7 +16,7 @@ interface UsersRepositoryInterface
     public function getUserById(int $userId): User;
 
     /**
-     * @throws UserNotFoundException
+     * @throws InvalidConfirmationTokenException
      */
     public function getUserByConfirmationToken(string $confirmationToken): User;
 

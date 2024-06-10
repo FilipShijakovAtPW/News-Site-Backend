@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Commanding\Commands\AssignRoleToUserCommand;
+use App\Commanding\Commands\CreateUserCommand;
+use App\Commanding\Commands\RemoveRoleFromUserCommand;
 use App\Deserialization\ControllerTraits\WorksWithJsonDecoderTrait;
-use App\Entity\Dto\UserAssignRole;
 use App\Entity\User;
-use App\Exception\UserNotFoundException;
 use App\Serialization\NormalizationGroups;
 use App\Service\Interface\UserServiceInterface;
 use App\Service\SerializationAndValidationService;
 use App\Validation\ControllerTraits\WorksWithValidationTrait;
 use App\Validation\JsonValidators\CreateUserJsonValidator;
 use App\Validation\JsonValidators\UserAssignRoleJsonValidator;
+use League\Tactician\CommandBus;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -29,9 +31,9 @@ class UserController extends AbstractController
     use WorksWithJsonDecoderTrait;
 
     public function __construct(
-        private UserServiceInterface $userService,
-        private SerializerInterface $serializer,
-        private ValidatorInterface $validator,
+        private UserServiceInterface              $userService,
+        private SerializerInterface               $serializer,
+        private ValidatorInterface                $validator,
         private SerializationAndValidationService $serializationAndValidationService
     )
     {
@@ -48,7 +50,7 @@ class UserController extends AbstractController
     }
 
     #[Route('/', name: 'dashboard-create-user', methods: ['POST'])]
-    public function createUser(Request $request, CreateUserJsonValidator $validator): Response
+    public function createUser(Request $request, CreateUserJsonValidator $validator, CommandBus $bus): Response
     {
         $this->denyAccessUnlessGranted(User::ROLE_ADMIN);
 
@@ -56,17 +58,13 @@ class UserController extends AbstractController
 
         $this->validate($data, $validator);
 
-        $result = $this->serializer->deserialize(json_encode($data), User::class, 'json');
+        $bus->handle(new CreateUserCommand($data['username'], $data['email']));
 
-        $confirmationToken = $this->userService->createUser($result);
-
-        return new JsonResponse([
-            'confirmation-url' => $this->generateUrl('confirm-user', ['token' => $confirmationToken])
-        ], Response::HTTP_CREATED);
+        return new JsonResponse("", Response::HTTP_CREATED);
     }
 
     #[Route('/assign-role', name: 'dashboard-assign-role', methods: ['POST'])]
-    public function assignRoleToUser(Request $request, UserAssignRoleJsonValidator $validator): Response
+    public function assignRoleToUser(Request $request, UserAssignRoleJsonValidator $validator, CommandBus $bus): Response
     {
         $this->denyAccessUnlessGranted(User::ROLE_ADMIN);
 
@@ -74,15 +72,13 @@ class UserController extends AbstractController
 
         $this->validate($data, $validator);
 
-        $result = $this->serializer->deserialize(json_encode($data), UserAssignRole::class, 'json');
-
-        $this->userService->assignRole($result);
+        $bus->handle(new AssignRoleToUserCommand($data['userId'], $data['role']));
 
         return new Response();
     }
 
     #[Route('/remove-role', name: 'dashboard-remove-role', methods: ['POST'])]
-    public function removeRoleFromUser(Request $request, UserAssignRoleJsonValidator $validator): Response
+    public function removeRoleFromUser(Request $request, UserAssignRoleJsonValidator $validator, CommandBus $bus): Response
     {
         $this->denyAccessUnlessGranted(User::ROLE_ADMIN);
 
@@ -90,9 +86,7 @@ class UserController extends AbstractController
 
         $this->validate($data, $validator);
 
-        $result = $this->serializer->deserialize(json_encode($data), UserAssignRole::class, 'json');
-
-        $this->userService->removeRole($result);
+        $bus->handle(new RemoveRoleFromUserCommand($data['userId'], $data['role']));
 
         return new Response();
     }

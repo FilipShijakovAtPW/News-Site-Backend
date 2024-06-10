@@ -20,5 +20,40 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
+    foo.user.create_article_handler:
+        class: App\Commanding\Handlers\CreateArticleCommandHandler
+        tags:
+            - { name: tactician.handler, command: App\Commanding\Commands\CreateArticleCommand }
+
+    foo.user.edit_article_handler:
+        class: App\Commanding\Handlers\EditArticleCommandHandler
+        tags:
+            - { name: tactician.handler, command: App\Commanding\Commands\EditArticleCommand }
+
+    foo.user.change_published_state_article_handler:
+        class: App\Commanding\Handlers\ChangePublishedStateForArticleCommandHandler
+        tags:
+            - { name: tactician.handler, command: App\Commanding\Commands\ChangePublishedStateForArticleCommandCommand }
+
+    foo.user.confirm_user:
+        class: App\Commanding\Handlers\ConfirmUserCommandHandler
+        tags:
+            - { name: tactician.handler, command: App\Commanding\Commands\ConfirmUserCommand }
+
+    foo.user.create_user:
+        class: App\Commanding\Handlers\CreateUserCommandHandler
+        tags:
+            - { name: tactician.handler, command: App\Commanding\Commands\CreateUserCommand }
+
+    foo.user.assign_role_to_user:
+        class: App\Commanding\Handlers\AssignRoleToUserCommandHandler
+        tags:
+            - { name: tactician.handler, command: App\Commanding\Commands\AssignRoleToUserCommand }
+
+    foo.user.remove_role_from_user:
+        class: App\Commanding\Handlers\RemoveRoleFromUserCommandHandler
+        tags:
+            - { name: tactician.handler, command: App\Commanding\Commands\RemoveRoleFromUserCommand }
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
