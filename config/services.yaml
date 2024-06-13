@@ -4,6 +4,8 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    env(MONGODB_URL): ''
+    env(MONGODB_DB): ''
 
 services:
     # default configuration for services in *this* file
@@ -18,6 +20,7 @@ services:
         exclude:
             - '../src/DependencyInjection/'
             - '../src/Entity/'
+            - '../src/Document/'
             - '../src/Kernel.php'
 
     foo.user.create_article_handler:
@@ -33,7 +36,7 @@ services:
     foo.user.change_published_state_article_handler:
         class: App\Commanding\Handlers\ChangePublishedStateForArticleCommandHandler
         tags:
-            - { name: tactician.handler, command: App\Commanding\Commands\ChangePublishedStateForArticleCommandCommand }
+            - { name: tactician.handler, command: App\Commanding\Commands\ChangePublishedStateForArticleCommand }
 
     foo.user.confirm_user:
         class: App\Commanding\Handlers\ConfirmUserCommandHandler
@@ -54,6 +57,9 @@ services:
         class: App\Commanding\Handlers\RemoveRoleFromUserCommandHandler
         tags:
             - { name: tactician.handler, command: App\Commanding\Commands\RemoveRoleFromUserCommand }
+
+    app.mongodb_user_provider:
+        class: App\Authentication\MongodbUserProvider
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

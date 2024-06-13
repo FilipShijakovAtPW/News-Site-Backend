@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Service;
+namespace App\Deserialization\ControllerTraits;
 
 use Symfony\Component\HttpFoundation\Request;
 
-class QueryParameterExtractorService
+trait WorksWithQueryExtractorTrait
 {
-    const ARTICLE_PROPERTIES = ['title', 'summary', 'content', 'published'];
-
-    public function extractQueryParameters(Request $request): array
+    public function extractQueryParameters(Request $request)
     {
+        $articleProperties = ['title', 'summary', 'content', 'published'];
+
         $pageNumber = $request->query->getInt('pageNumber', 1);
         $pageSize = $request->query->getInt('pageSize', 10);
         $orderByAsc = $request->query->get('orderByAsc');
@@ -17,10 +17,10 @@ class QueryParameterExtractorService
         $matches = $request->query->get('matches');
         $contains = $request->query->get('contains');
 
-        if (!in_array($orderByAsc, self::ARTICLE_PROPERTIES)) {
+        if (!in_array($orderByAsc, $articleProperties)) {
             $orderByAsc = null;
         }
-        if (!in_array($orderByDesc, self::ARTICLE_PROPERTIES)) {
+        if (!in_array($orderByDesc, $articleProperties)) {
             $orderByDesc = null;
         }
 

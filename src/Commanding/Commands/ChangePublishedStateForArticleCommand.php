@@ -2,11 +2,13 @@
 
 namespace App\Commanding\Commands;
 
+use App\Model\Identifier\Identifier;
+
 class ChangePublishedStateForArticleCommand
 {
-    private int $articleId;
+    private Identifier $articleId;
 
-    public function __construct(int $articleId)
+    public function __construct(Identifier $articleId)
     {
         $this->articleId = $articleId;
     }
@@ -14,7 +16,7 @@ class ChangePublishedStateForArticleCommand
     /**
      * @return int
      */
-    public function getArticleId(): int
+    public function getArticleId(): Identifier
     {
         return $this->articleId;
     }

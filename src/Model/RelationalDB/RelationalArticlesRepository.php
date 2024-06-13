@@ -10,7 +10,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 
-class RelationalArticlesRepository implements ArticlesRepositoryInterface
+class RelationalArticlesRepository
 {
     public function __construct(private EntityManagerInterface $entityManager)
     {

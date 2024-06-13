@@ -10,7 +10,7 @@ use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 
-class RelationalUsersRepository implements UsersRepositoryInterface
+class RelationalUsersRepository
 {
 
     public function __construct(private EntityManagerInterface $entityManager)

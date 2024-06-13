@@ -2,14 +2,16 @@
 
 namespace App\Commanding\Commands;
 
+use App\Model\Identifier\Identifier;
+
 class EditArticleCommand
 {
-    private int $articleId;
+    private Identifier $articleId;
     private ?string $title;
     private ?string $summary;
     private ?string $content;
 
-    public function __construct(int $articleId, ?string $title, ?string $summary, ?string $content)
+    public function __construct(Identifier $articleId, ?string $title, ?string $summary, ?string $content)
     {
         $this->articleId = $articleId;
         $this->title = $title;
@@ -17,7 +19,7 @@ class EditArticleCommand
         $this->content = $content;
     }
 
-    public function getArticleId(): int
+    public function getArticleId(): Identifier
     {
         return $this->articleId;
     }

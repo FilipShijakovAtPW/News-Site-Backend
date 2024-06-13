@@ -2,18 +2,20 @@
 
 namespace App\Model;
 
-use App\Entity\Article;
-use App\Entity\User;
+use App\Document\Article;
+use App\Document\User;
+use App\Model\Identifier\Identifier;
 
 interface ArticlesRepositoryInterface
 {
-    public function getArticleById(int $id);
+    public function getNextIdentifier();
+    public function getArticleById(Identifier $identifier);
 
     public function getPublishedArticlesWithFilters(array $filters);
 
     public function getAllArticlesWithFilters(array $filters);
 
-    public function getUserArticlesWithFilters(int $userId, array $filters);
+    public function getUserArticlesWithFilters(User $user, array $filters);
 
     public function saveArticle(Article $article);
 

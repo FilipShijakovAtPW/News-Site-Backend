@@ -4,10 +4,7 @@ namespace App\Controller;
 
 use App\Commanding\Commands\ConfirmUserCommand;
 use App\Deserialization\ControllerTraits\WorksWithJsonDecoderTrait;
-use App\Entity\Dto\UserConfirm;
-use App\Exception\InvalidConfirmationTokenException;
-use App\Service\Interface\UserServiceInterface;
-use App\Service\SerializationAndValidationService;
+use App\Transofmers\UserTransformer;
 use App\Validation\ControllerTraits\WorksWithValidationTrait;
 use App\Validation\JsonValidators\ConfirmUserJsonValidator;
 use League\Tactician\CommandBus;
@@ -25,10 +22,8 @@ class UserConfirmationController extends AbstractController
     use WorksWithValidationTrait;
 
     public function __construct(
-        private UserServiceInterface              $userService,
-        private ValidatorInterface                $validator,
-        private SerializerInterface               $serializer,
-        private SerializationAndValidationService $serializationAndValidationService
+        private ValidatorInterface  $validator,
+        private SerializerInterface $serializer
     )
     {
     }

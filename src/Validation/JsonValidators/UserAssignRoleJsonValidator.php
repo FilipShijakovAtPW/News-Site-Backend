@@ -16,7 +16,7 @@ class UserAssignRoleJsonValidator extends JsonObjectValidator implements Validat
         $contraints = [
             'userId' => [
                 new Assert\NotBlank(),
-                new Assert\Type('int'),
+                new Assert\Type('string'),
                 ],
             'role' => new Assert\NotBlank(),
         ];

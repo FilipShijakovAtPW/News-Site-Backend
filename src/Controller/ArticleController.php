@@ -8,20 +8,21 @@ use App\Authorization\ArticleVoter;
 use App\Commanding\Commands\ChangePublishedStateForArticleCommand;
 use App\Commanding\Commands\CreateArticleCommand;
 use App\Commanding\Commands\EditArticleCommand;
+use App\Deserialization\ControllerTraits\WorksWithFractalTrait;
 use App\Deserialization\ControllerTraits\WorksWithJsonDecoderTrait;
-use App\Entity\Article;
+use App\Deserialization\ControllerTraits\WorksWithQueryExtractorTrait;
 use App\Entity\User;
 use App\Model\ArticlesRepositoryInterface;
-use App\Serialization\NormalizationGroups;
-use App\Service\Interface\ArticleServiceInterface;
-use App\Service\QueryParameterExtractorService;
-use App\Service\SerializationAndValidationService;
+use App\Model\Identifier\Identifier;
+use App\Transofmers\AllArticleTransformer;
+use App\Transofmers\PublishedArticleTransformer;
 use App\Validation\ControllerTraits\WorksWithValidationTrait;
 use App\Validation\JsonValidators\CreateArticleJsonValidator;
 use App\Validation\JsonValidators\EditArticleJsonValidator;
+use League\Fractal\Resource\Collection;
+use League\Fractal\Resource\Item;
 use League\Tactician\CommandBus;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -33,61 +34,70 @@ class ArticleController extends AbstractController
 {
     use WorksWithValidationTrait;
     use WorksWithJsonDecoderTrait;
+    use WorksWithFractalTrait;
+    use WorksWithQueryExtractorTrait;
 
     public function __construct(
-        private QueryParameterExtractorService    $parameterExtractorService,
-        private ArticleServiceInterface           $articleService,
-        private SerializerInterface               $serializer,
-        private SerializationAndValidationService $serializationAndValidationService,
-        private ValidatorInterface                $validator,
-        private ArticlesRepositoryInterface $articlesRepository,
+        private SerializerInterface            $serializer,
+        private ValidatorInterface             $validator,
+        private ArticlesRepositoryInterface    $articlesRepository,
     )
     {
     }
 
     #[Route('/dashboard/article', name: 'dashboard-get-articles', methods: ['GET'])]
-    public function getArticles(Request $request): Response
+    public function getArticles(
+        Request                     $request,
+        AllArticleTransformer       $allArticleTransformer,
+        PublishedArticleTransformer $publishedArticleTransformer
+    ): Response
     {
         $isEditor = $this->isGranted(User::ROLE_EDITOR);
 
-        $parameters = $this->parameterExtractorService->extractQueryParameters($request);
+        $parameters = $this->extractQueryParameters($request);
 
         if ($isEditor) {
-            $items = $this->articleService->getAllArticles($parameters);
+            $items = $this->articlesRepository->getAllArticlesWithFilters($parameters);
+
+            $resource = new Collection($items, $allArticleTransformer);
         } else {
-            $items = $this->articleService->getPublishedArticles($parameters);
+            $items = $this->articlesRepository->getPublishedArticlesWithFilters($parameters);
+
+            $resource = new Collection($items, $publishedArticleTransformer);
         }
 
-        return JsonResponse::fromJsonString(
-            $this->serializer->serialize($items, 'json', ['groups' => [NormalizationGroups::ALL_ARTICLES]]));
+        return $this->createJsonResponse($resource);
     }
 
     #[Route("/dashboard/user-article", name: "dashboard-user-articles", methods: ["GET"])]
-    public function userArticles(Request $request): Response
+    public function userArticles(Request $request, AllArticleTransformer $allArticleTransformer): Response
     {
         $this->denyAccessUnlessGranted(User::ROLE_WRITER);
 
-        $parameters = $this->parameterExtractorService->extractQueryParameters($request);
+        $parameters = $this->extractQueryParameters($request);
 
-        $items = $this->articleService->getUserArticles($this->getUser(), $parameters);
+        $items = $this->articlesRepository->getUserArticlesWithFilters($this->getUser(), $parameters);
 
-        return JsonResponse::fromJsonString(
-            $this->serializer->serialize($items, 'json', ['groups' => [NormalizationGroups::ALL_ARTICLES]])
-        );
+        return $this->createJsonResponse(new Collection($items, $allArticleTransformer));
     }
 
-    #[Route('/dashboard/article/{id}/change-published-state', name: 'dashboard-change-published-state-article', requirements: ['id' => '\d+'], methods: ['GET'])]
-    public function changePublishedStateForArticle(int $id, CommandBus $bus): Response
+    #[Route('/dashboard/article/{id}/change-published-state', name: 'dashboard-change-published-state-article', methods: ['GET'])]
+    public function changePublishedStateForArticle(string $id, CommandBus $bus): Response
     {
         $this->denyAccessUnlessGranted(User::ROLE_EDITOR);
 
-        $bus->handle(new ChangePublishedStateForArticleCommand($id));
+        $bus->handle(new ChangePublishedStateForArticleCommand(Identifier::fromString($id)));
 
         return new Response();
     }
 
     #[Route('/dashboard/article', name: 'dashboard-create-article', methods: ['POST'])]
-    public function createArticle(Request $request, CreateArticleJsonValidator $validator, CommandBus $bus): Response
+    public function createArticle(
+        Request                    $request,
+        CreateArticleJsonValidator $validator,
+        CommandBus                 $bus,
+        AllArticleTransformer      $allArticleTransformer
+    ): Response
     {
         $this->denyAccessUnlessGranted(User::ROLE_WRITER);
 
@@ -95,18 +105,33 @@ class ArticleController extends AbstractController
 
         $this->validate($data, $validator);
 
+        /** @var Identifier $articleId */
+        $articleId = $this->articlesRepository->getNextIdentifier();
+
         $bus->handle(new CreateArticleCommand(
+            $articleId,
             $this->getUser(),
             $data['title'],
             $data['summary'],
             $data['content']
         ));
 
-        return JsonResponse::fromJsonString("", Response::HTTP_CREATED);
+        $article = $this->articlesRepository->getArticleById($articleId);
+
+        return $this->createJsonResponse(
+            new Item($article, $allArticleTransformer),
+            Response::HTTP_CREATED
+        );
     }
 
     #[Route('/dashboard/article/{id}', name: 'dashboard-edit-article', methods: ['PUT'])]
-    public function editArticle(int $id, Request $request, EditArticleJsonValidator $validator, CommandBus $bus): Response
+    public function editArticle(
+        string                   $id,
+        Request                  $request,
+        EditArticleJsonValidator $validator,
+        CommandBus               $bus,
+        AllArticleTransformer    $allArticleTransformer
+    ): Response
     {
         $this->denyAccessUnlessGranted(ArticleVoter::EDIT, $id);
 
@@ -114,15 +139,19 @@ class ArticleController extends AbstractController
 
         $this->validate($data, $validator);
 
+        $identifier = Identifier::fromString($id);
+
         $bus->handle(new EditArticleCommand(
-            $id,
+            $identifier,
             $data['title'] ?? null,
             $data['summary'] ?? null,
             $data['content'] ?? null
         ));
 
-        return JsonResponse::fromJsonString(
-            "",
+        $article = $this->articlesRepository->getArticleById($identifier);
+
+        return $this->createJsonResponse(
+            new Item($article, $allArticleTransformer),
             Response::HTTP_CREATED
         );
     }

@@ -3,7 +3,7 @@
 namespace App\Commanding\Handlers;
 
 use App\Commanding\Commands\CreateArticleCommand;
-use App\Entity\Article;
+use App\Document\Article;
 use App\Model\ArticlesRepositoryInterface;
 
 class CreateArticleCommandHandler
@@ -15,6 +15,7 @@ class CreateArticleCommandHandler
     public function handle(CreateArticleCommand $command): void
     {
         $article = Article::create(
+            $command->getIdentifier()->getId(),
             $command->getUser(),
             $command->getTitle(),
             $command->getSummary(),

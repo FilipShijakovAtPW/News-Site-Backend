@@ -2,9 +2,10 @@
 
 namespace App\Authorization;
 
-use App\Entity\Article;
-use App\Entity\User;
+use App\Document\Article;
+use App\Document\User;
 use App\Model\ArticlesRepositoryInterface;
+use App\Model\Identifier\Identifier;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 use Symfony\Component\Security\Core\Security;
@@ -28,7 +29,7 @@ class ArticleVoter extends Voter
 
         if ($attribute === self::EDIT) {
             /** @var Article $article */
-            $article = $this->articlesRepository->getArticleById($subject);
+            $article = $this->articlesRepository->getArticleById(Identifier::fromString($subject));
 
             if ($this->security->isGranted(User::ROLE_WRITER) &&
                 $article->getUser()->getUserIdentifier() === $user->getUserIdentifier()) {

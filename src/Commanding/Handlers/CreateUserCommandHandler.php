@@ -3,7 +3,7 @@
 namespace App\Commanding\Handlers;
 
 use App\Commanding\Commands\CreateUserCommand;
-use App\Entity\User;
+use App\Document\User;
 use App\Model\UsersRepositoryInterface;
 
 class CreateUserCommandHandler
@@ -14,7 +14,7 @@ class CreateUserCommandHandler
 
     public function handle(CreateUserCommand $command)
     {
-        $user = User::create($command->getUsername(), $command->getEmail());
+        $user = User::create($command->getIdentifier()->getId(), $command->getUsername(), $command->getEmail());
 
         $this->usersRepository->saveUser($user);
     }

@@ -3,7 +3,7 @@
 namespace App\Commanding\Handlers;
 
 use App\Commanding\Commands\ChangePublishedStateForArticleCommand;
-use App\Entity\Article;
+use App\Document\Article;
 use App\Model\ArticlesRepositoryInterface;
 
 class ChangePublishedStateForArticleCommandHandler

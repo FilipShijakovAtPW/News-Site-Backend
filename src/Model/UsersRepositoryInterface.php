@@ -2,23 +2,24 @@
 
 namespace App\Model;
 
-use App\Entity\User;
+use App\Document\User;
 use App\Exception\InvalidConfirmationTokenException;
 use App\Exception\UserNotFoundException;
+use App\Model\Identifier\Identifier;
 
 interface UsersRepositoryInterface
 {
+    public function getNextIdentifier();
+
     public function getAllUsers();
 
-    /**
-     * @throws UserNotFoundException
-     */
-    public function getUserById(int $userId): User;
+    public function getUserById(Identifier $userIdentifier): User;
 
-    /**
-     * @throws InvalidConfirmationTokenException
-     */
     public function getUserByConfirmationToken(string $confirmationToken): User;
+
+    public function getUserByUsername(string $username);
+
+    public function getUserConfirmationToken(Identifier $userIdentifier);
 
     public function saveUser(User $user);
 
