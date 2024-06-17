@@ -10,10 +10,14 @@ use Symfony\Component\HttpFoundation\Response;
 
 trait WorksWithFractalTrait
 {
-    private function fractal(): Manager
+    private function fractal(array $includes, array $excludes): Manager
     {
         $manager = new Manager();
         $manager->setSerializer(new ArraySerializer());
+
+        $manager->parseIncludes($includes);
+
+        $manager->parseExcludes($excludes);
 
         return $manager;
     }
@@ -21,11 +25,13 @@ trait WorksWithFractalTrait
     public function createJsonResponse(
         ResourceAbstract $data,
         $statusCode = Response::HTTP_OK,
+        $includes = [],
+        $excludes = [],
         $headers = [],
     ): JsonResponse
     {
         return new JsonResponse(
-            $this->fractal()->createData($data)->toArray(),
+            $this->fractal($includes, $excludes)->createData($data)->toArray(),
             $statusCode,
             $headers
         );

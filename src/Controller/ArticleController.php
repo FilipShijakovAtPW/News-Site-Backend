@@ -14,8 +14,7 @@ use App\Deserialization\ControllerTraits\WorksWithQueryExtractorTrait;
 use App\Entity\User;
 use App\Model\ArticlesRepositoryInterface;
 use App\Model\Identifier\Identifier;
-use App\Transofmers\AllArticleTransformer;
-use App\Transofmers\PublishedArticleTransformer;
+use App\Transofmers\ArticleTransformer;
 use App\Validation\ControllerTraits\WorksWithValidationTrait;
 use App\Validation\JsonValidators\CreateArticleJsonValidator;
 use App\Validation\JsonValidators\EditArticleJsonValidator;
@@ -48,8 +47,7 @@ class ArticleController extends AbstractController
     #[Route('/dashboard/article', name: 'dashboard-get-articles', methods: ['GET'])]
     public function getArticles(
         Request                     $request,
-        AllArticleTransformer       $allArticleTransformer,
-        PublishedArticleTransformer $publishedArticleTransformer
+        ArticleTransformer          $articleTransformer
     ): Response
     {
         $isEditor = $this->isGranted(User::ROLE_EDITOR);
@@ -58,19 +56,19 @@ class ArticleController extends AbstractController
 
         if ($isEditor) {
             $items = $this->articlesRepository->getAllArticlesWithFilters($parameters);
-
-            $resource = new Collection($items, $allArticleTransformer);
+            $excludes = [];
         } else {
             $items = $this->articlesRepository->getPublishedArticlesWithFilters($parameters);
-
-            $resource = new Collection($items, $publishedArticleTransformer);
+            $excludes = ['isPublished'];
         }
 
-        return $this->createJsonResponse($resource);
+        $resource = new Collection($items, $articleTransformer);
+
+        return $this->createJsonResponse($resource, Response::HTTP_OK, [], $excludes);
     }
 
     #[Route("/dashboard/user-article", name: "dashboard-user-articles", methods: ["GET"])]
-    public function userArticles(Request $request, AllArticleTransformer $allArticleTransformer): Response
+    public function userArticles(Request $request, ArticleTransformer $articleTransformer): Response
     {
         $this->denyAccessUnlessGranted(User::ROLE_WRITER);
 
@@ -78,7 +76,7 @@ class ArticleController extends AbstractController
 
         $items = $this->articlesRepository->getUserArticlesWithFilters($this->getUser(), $parameters);
 
-        return $this->createJsonResponse(new Collection($items, $allArticleTransformer));
+        return $this->createJsonResponse(new Collection($items, $articleTransformer));
     }
 
     #[Route('/dashboard/article/{id}/change-published-state', name: 'dashboard-change-published-state-article', methods: ['GET'])]
@@ -96,7 +94,7 @@ class ArticleController extends AbstractController
         Request                    $request,
         CreateArticleJsonValidator $validator,
         CommandBus                 $bus,
-        AllArticleTransformer      $allArticleTransformer
+        ArticleTransformer $articleTransformer
     ): Response
     {
         $this->denyAccessUnlessGranted(User::ROLE_WRITER);
@@ -119,7 +117,7 @@ class ArticleController extends AbstractController
         $article = $this->articlesRepository->getArticleById($articleId);
 
         return $this->createJsonResponse(
-            new Item($article, $allArticleTransformer),
+            new Item($article, $articleTransformer),
             Response::HTTP_CREATED
         );
     }
@@ -130,7 +128,7 @@ class ArticleController extends AbstractController
         Request                  $request,
         EditArticleJsonValidator $validator,
         CommandBus               $bus,
-        AllArticleTransformer    $allArticleTransformer
+        ArticleTransformer $articleTransformer
     ): Response
     {
         $this->denyAccessUnlessGranted(ArticleVoter::EDIT, $id);
@@ -151,7 +149,7 @@ class ArticleController extends AbstractController
         $article = $this->articlesRepository->getArticleById($identifier);
 
         return $this->createJsonResponse(
-            new Item($article, $allArticleTransformer),
+            new Item($article, $articleTransformer),
             Response::HTTP_CREATED
         );
     }

@@ -2,19 +2,23 @@
 
 namespace App\Document;
 
+use App\Eventing\Events\UserCreatedEvent;
+use App\Eventing\Infrastructure\GeneratorInterface;
+use App\Eventing\Traits\GeneratesEventsTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ODM\MongoDB\Mapping\Annotations as ODM;
 use Doctrine\ODM\MongoDB\Types\Type;
-use Lexik\Bundle\JWTAuthenticationBundle\Security\User\JWTUserInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Uid\Uuid;
 
 #[ODM\Document(collection: 'users')]
-class User implements UserInterface, PasswordAuthenticatedUserInterface
+class User implements UserInterface, PasswordAuthenticatedUserInterface, GeneratorInterface
 {
+    use GeneratesEventsTrait;
+
     public const ROLE_ADMIN = 'ROLE_ADMIN';
     public const ROLE_EDITOR = 'ROLE_EDITOR';
     public const ROLE_WRITER = 'ROLE_WRITER';
@@ -43,24 +47,25 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ODM\ReferenceMany(targetDocument: Article::class, mappedBy: 'user')]
     private Collection $articles;
 
-    public function __construct()
+    private function __construct(string $id, string $username, string $email)
     {
         $this->articles = new ArrayCollection();
         $this->roles = [];
+
+        $this->id = $id;
+        $this->username = $username;
+        $this->email = $email;
+
+        $confirmationToken = Uuid::v4()->toBase58();
+        $this->confirmationToken = $confirmationToken;
+        $this->isConfirmed = false;
+
+        $this->raise(new UserCreatedEvent($email, $confirmationToken));
     }
 
     public static function create(string $id, string $username, string $email): self
     {
-        $user = new User();
-        $user->id = $id;
-        $user->username = $username;
-        $user->email = $email;
-
-        $confirmationToken = Uuid::v4()->toBase58();
-        $user->confirmationToken = $confirmationToken;
-        $user->isConfirmed = false;
-
-        return $user;
+        return new User($id, $username, $email);
     }
 
     public static function getDummy(
@@ -73,14 +78,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         UserPasswordHasherInterface $passwordHasher
     ): self
     {
-        $user = new User();
+        $user = new User($id, $username, $email);
 
-        $user->id = $id;
-        $user->username = $username;
-        $user->email = $email;
-        $user->password = $passwordHasher->hashPassword($user, $password);
+        $user->password = $password != null ? $passwordHasher->hashPassword($user, $password) : null;
         $user->isConfirmed = $isConfirmed;
         $user->roles = $roles;
+
+        if (!$isConfirmed) {
+            $user->confirmationToken = null;
+        }
 
         return $user;
     }
